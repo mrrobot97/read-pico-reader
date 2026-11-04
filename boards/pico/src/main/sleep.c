@@ -24,6 +24,10 @@
  * User2026-11-04 follow-up: retain true history on transparent-cover unlock for one caller GC16 restore; failures and other styles retain clearing.
  * 用户2026-11-04追加：上述锁屏/浅睡解锁与网络后置扩展到Pico全部四种样式；拼贴反馈仅局部GC16圆锁，失败保留清屏恢复。
  * User2026-11-04 additionally extends single-pass lock/unlock and deferred networking to all four Pico styles; collage feedback uses a local GC16 badge, retaining failure clearing.
+ * 用户2026-11-04透字反馈：透明书封入锁恢复一次GC16白目标再显示最终图；临时白画布用后释放，不改素材、缓存、解锁或其他样式。
+ * User2026-11-04 ghosting report: transparent locks add one white GC16 target before final art; free the temporary white canvas and preserve assets, caching, unlocks and other styles.
+ * 用户确认透明书封透字消失，要求其余样式同样处理：四种入锁均先白目标再最终图，素材/缓存/解锁与异常兜底保留。
+ * After confirming the cover fix, the user requests the same protection for other styles: all four locks use white then final art, preserving assets, caches, unlocks and failure recovery.
  */
 #include "ui_avatar.h"
 #include "book_cover_jobs.h"
@@ -604,6 +608,23 @@ bool lock_pin_grace_active(void) {
            (uint32_t)now - locked_at < (uint32_t)app_settings_pin_grace_minutes() * 60u;
 }
 
+// 所有锁屏样式先用一次原GC16白目标擦旧字，再输出已合成锁图；不恢复三轮盲清屏。
+// All lock styles clear old text with one calibrated white GC16 target before final art, without three blind-clear cycles.
+static enum EpdDrawError present_clean_lock(EpdiyHighlevelState *hl) {
+    const size_t bytes = (size_t)epd_width() * epd_height() / 2;
+    uint8_t *white = heap_caps_aligned_alloc(16, bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (!white) return EPD_DRAW_FAILED_ALLOC;
+    memset(white, 255, bytes);
+    // 仅替换临时状态的目标指针，共用真实后缓冲；最终锁图及ctx->fb始终不被擦白。
+    // A temporary state shares real history but targets white; never overwrite the final art or ctx->fb.
+    EpdiyHighlevelState clean = *hl;
+    clean.front_fb = white;
+    enum EpdDrawError result = update_display_full(&clean);
+    heap_caps_free(white);
+    if (result != EPD_DRAW_SUCCESS) return result;
+    return update_display_full(hl);
+}
+
 void enter_lock_and_sleep(
     EpdiyHighlevelState* hl, int64_t* ignore_until_ms, sc7a20h_handle_t acc, cst836u_handle_t touch,
     bool reader_background
@@ -641,7 +662,7 @@ void enter_lock_and_sleep(
     }
     enum EpdDrawError result = EPD_DRAW_SUCCESS;
     const bool direct_frame = !feedback_failed && lock_drawn;
-    if (direct_frame) result = update_display_full(hl);
+    if (direct_frame) result = present_clean_lock(hl);
     if (!direct_frame || result != EPD_DRAW_SUCCESS) {
         // 所有样式从真实后缓冲输出；绘图或输出失败仍清白，再按白基准重试最终图。
         // All styles use true history; art/output failures retain clearing and the from-white final frame.

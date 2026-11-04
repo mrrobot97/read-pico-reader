@@ -24,7 +24,7 @@ static void app_lock_wake_single_once(void){}
 #define UI_LOCK_HEIGHT 1216
 #define FRAME_BYTES (684u*1216u/2u)
 #define MODE_GC16 1
-enum EpdDrawError {EPD_DRAW_SUCCESS=0,EPD_DRAW_FAULT=1};
+enum EpdDrawError {EPD_DRAW_SUCCESS=0,EPD_DRAW_FAULT=1,EPD_DRAW_FAILED_ALLOC=0x10};
 #define APP_WAKE_KEY 1
 #define APP_WAKE_TIMEOUT 3
 #define APP_SLEEP_DEEP 1
@@ -36,7 +36,7 @@ static void test_log(const char *format,...){(void)format;}
 #define ESP_LOGW(...) ((void)0)
 #define pdMS_TO_TICKS(x) (x)
 typedef struct {int x,y,width,height;} EpdRect;
-typedef struct {uint8_t *back_fb;} EpdiyHighlevelState;
+typedef struct {uint8_t *back_fb,*front_fb;} EpdiyHighlevelState;
 typedef struct {bool mounted;} read_pico_sd_info_t;
 typedef struct {bool active;} app_lock_font_t;
 typedef void *sc7a20h_handle_t;typedef void *cst836u_handle_t;
@@ -50,6 +50,12 @@ static uint8_t pixels[FRAME_BYTES],panel[FRAME_BYTES],history[FRAME_BYTES],style
 static bool frame_ready, s_lock_feedback_failed, s_lock_feedback_visible, feedback_seen, final_ok=true;
 static unsigned full_presents, entry_clears, exit_clears, exit_white;
 static bool unlocking,recovery_ok=true,hint_visible;
+static bool white_ok=true,white_alloc_fail;
+static unsigned white_scans,white_allocations;
+#define MALLOC_CAP_SPIRAM 1
+#define MALLOC_CAP_8BIT 2
+void *heap_caps_aligned_alloc(size_t alignment,size_t size,int caps){assert(alignment==16&&size==FRAME_BYTES&&caps==3);if(white_alloc_fail)return NULL;++white_allocations;return malloc(size);}
+void heap_caps_free(void *p){assert(p&&white_allocations);--white_allocations;free(p);}
 static uint8_t wake_frame[FRAME_BYTES];
 static unsigned draws[4],fallback,presents,auths,font_begin,font_end,pause,resume,clear_resume;
 static bool pin,draw_ok=true,transfer_ok=true,timeout,reader,boot_cache,cache_ok;
@@ -68,7 +74,20 @@ static bool lock_screen_save(const uint8_t *fb){assert(fb==pixels&&presents&&!me
 static int pico_boot_mark_frame_cached(void){return 0;}
 static bool book_lock_collage_draw(uint8_t *fb){return draw(2,fb);}
 static bool book_lock_collage_prepare(uint8_t *fb){return draw(2,fb);}
-static enum EpdDrawError update_display_full(EpdiyHighlevelState *h){(void)h;++full_presents;assert(!s_lock_feedback_visible&&frame_ready);assert(panel[0]==current_background&&h->back_fb==history&&!memcmp(history,panel,FRAME_BYTES));if(feedback_seen)assert(panel[1]==0);else assert(draw_ok&&pixels[0]==0x10+style);if(!final_ok){panel[0]=0x77;return EPD_DRAW_FAULT;}memcpy(panel,pixels,FRAME_BYTES);memcpy(history,pixels,FRAME_BYTES);++presents;return EPD_DRAW_SUCCESS;}
+static enum EpdDrawError update_display_full(EpdiyHighlevelState *h){
+ assert(!s_lock_feedback_visible&&frame_ready&&h->back_fb==history&&!memcmp(history,panel,FRAME_BYTES));
+ if(h->front_fb!=pixels){
+  assert(draw_ok&&h->front_fb&&white_allocations==1);++white_scans;
+  for(size_t i=0;i<FRAME_BYTES;++i)assert(h->front_fb[i]==255&&pixels[i]==0x10+style);
+  if(!white_ok){panel[0]=0x77;return EPD_DRAW_FAULT;}
+  memcpy(panel,h->front_fb,FRAME_BYTES);memcpy(history,panel,FRAME_BYTES);return EPD_DRAW_SUCCESS;
+ }
+ ++full_presents;assert(!white_allocations);
+ assert(panel[0]==255);
+ assert(panel[1]==255&&draw_ok&&pixels[0]==0x10+style);
+ if(!final_ok){panel[0]=0x77;return EPD_DRAW_FAULT;}
+ memcpy(panel,pixels,FRAME_BYTES);memcpy(history,pixels,FRAME_BYTES);++presents;return EPD_DRAW_SUCCESS;
+}
 static void book_lock_collage_cache_commit(const uint8_t *fb){assert(style==2&&draw_ok&&presents==1&&fb==pixels&&!memcmp(panel,pixels,FRAME_BYTES));}
 static void ui_lock_fallback_draw(uint8_t *fb){assert(panel[0]==(current_background));++fallback;memset(fb,255,FRAME_BYTES);frame_ready=true;}
 static uint8_t *epd_hl_get_framebuffer(EpdiyHighlevelState *h){(void)h;return pixels;}
@@ -98,18 +117,18 @@ static void vTaskDelay(int ms){(void)ms;}
 static int epd_width(void){return 684;}
 static int epd_height(void){return 1216;}
 '''
-for name in ('draw_wallpaper', 'enter_lock_and_sleep', 'app_lock_boot_gate'):
+for name in ('draw_wallpaper', 'present_clean_lock', 'enter_lock_and_sleep', 'app_lock_boot_gate'):
     unit += function(name, ROOT/'main/sleep.c') + '\n'
 unit += r'''
-static void reset(void){current_background=0x32;memset(draws,0,sizeof(draws));fallback=presents=auths=font_begin=font_end=pause=resume=clear_resume=0;memset(pixels,0x32,FRAME_BYTES);memset(panel,0x32,FRAME_BYTES);memset(history,0x32,FRAME_BYTES);frame_ready=s_lock_feedback_failed=s_lock_feedback_visible=feedback_seen=false;full_presents=entry_clears=exit_clears=exit_white=0;unlocking=hint_visible=false;recovery_ok=true;final_ok=true;draw_ok=transfer_ok=true;timeout=reader=boot_cache=cache_ok=false;}
+static void reset(void){assert(!white_allocations);white_scans=0;white_ok=true;white_alloc_fail=false;current_background=0x32;memset(draws,0,sizeof(draws));fallback=presents=auths=font_begin=font_end=pause=resume=clear_resume=0;memset(pixels,0x32,FRAME_BYTES);memset(panel,0x32,FRAME_BYTES);memset(history,0x32,FRAME_BYTES);frame_ready=s_lock_feedback_failed=s_lock_feedback_visible=feedback_seen=false;full_presents=entry_clears=exit_clears=exit_white=0;unlocking=hint_visible=false;recovery_ok=true;final_ok=true;draw_ok=transfer_ok=true;timeout=reader=boot_cache=cache_ok=false;}
 int main(void){
- EpdiyHighlevelState hl={history};int64_t ignore=0;
+ EpdiyHighlevelState hl={.back_fb=history,.front_fb=pixels};int64_t ignore=0;
  // 两种来源的阅读背景只影响票根内容，不决定样式。/ Reader provenance affects ticket content, never the style.
  for(unsigned s=0;s<4;++s)for(unsigned password=0;password<2;++password)for(unsigned body=0;body<2;++body){
   reset();style=s;pin=password;reader=body;
   enter_lock_and_sleep(&hl,&ignore,(void*)1,(void*)2,reader);
   assert(draws[s]==1&&draws[(s+1)%3]==0&&draws[(s+2)%3]==0&&!fallback&&presents==1);
-  assert(full_presents==1&&!entry_clears);
+  assert(full_presents==1&&!entry_clears&&white_scans==1&&!white_allocations);
   assert(!exit_clears&&!exit_white);
   {assert(!memcmp(panel,wake_frame,FRAME_BYTES)&&!memcmp(history,wake_frame,FRAME_BYTES));assert(panel[0]==(password?0x44:0x10+s));}
   assert(auths==password&&pause==1&&resume==0&&clear_resume==1&&ignore==3000);
@@ -123,6 +142,11 @@ int main(void){
   reset();style=selected;pin=password;final_ok=success;
   enter_lock_and_sleep(&hl,NULL,(void*)1,(void*)2,false);
   assert(full_presents==1&&entry_clears==!success&&presents==1&&auths==password&&!exit_clears&&!exit_white);
+ }
+ // Failed allocation or white output must keep the completed target intact for the original recovery.
+ for(unsigned selected=0;selected<4;++selected)for(unsigned password=0;password<2;++password)for(int failure=0;failure<2;++failure){reset();style=selected;pin=password;white_alloc_fail=failure==0;white_ok=failure==0;
+  enter_lock_and_sleep(&hl,NULL,(void*)1,(void*)2,false);
+  assert(!full_presents&&white_scans==(failure==1)&&entry_clears==1&&presents==1&&!white_allocations&&!exit_clears&&auths==password);
  }
  // A double-click hint may still be physical while the front buffer has restored the artwork.
  reset();style=3;pin=false;hint_visible=true;
@@ -157,7 +181,7 @@ int main(void){
  }
  for(unsigned s=0;s<4;++s){reset();style=s;pin=boot_cache=true;draw_ok=false;app_lock_boot_gate(&hl,(void*)2,(void*)1);assert(auths==1&&draws[s]==1&&fallback==1&&style==s);}
  reset();pin=false;app_lock_boot_gate(&hl,(void*)2,(void*)1);assert(!auths&&!font_begin);
- puts("PASS: all four styles lock once and unlock from actual art/PIN history without preclear; failed history retains clearing; failed output/art retains clear fallback; real single-pass final collage retains white/badge history, avoids duplicate entry clear, recovers final faults and consumes feedback before cache/PIN; auto/manual lock entry chooses ticket/wallpaper/collage with/without PIN and reader background; upload deferral; deep timeout; cold gate cache/fault fallback keeps selected style");
+ puts("PASS: all four styles use one white target then intact art and unlock from actual art/PIN history without preclear; failed history retains clearing; failed output/art retains clear fallback; real single-pass final collage retains white/badge history, avoids duplicate entry clear, recovers final faults and consumes feedback before cache/PIN; auto/manual lock entry chooses ticket/wallpaper/collage with/without PIN and reader background; upload deferral; deep timeout; cold gate cache/fault fallback keeps selected style");
 }
 '''
 with tempfile.TemporaryDirectory() as folder:

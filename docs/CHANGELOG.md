@@ -2,8 +2,8 @@
 
 ## 本地测试 / Local test — 2026-11-04
 
-- Pico阅读票根、自定义壁纸、书封拼贴和透明书封正常锁屏与浅睡解锁均省去三轮预清屏，从真实显示记录各用一次GC16输出目标画面；拼贴圆锁提示改为局部GC16，页面恢复后再重启网络服务，并在恢复结束后清理积压按键、重新开始原有按键保护与空闲计时，避免慢网络导致再次锁屏。绘图/显示失败保留清屏兜底，密码校验、深睡启动与S31不变。
-  All four Pico lock styles use one GC16 from true history for normal lock and light-sleep page restore, without three preclear cycles. Collage feedback uses a local GC16 badge; networking resumes after page restoration, followed by queued-key cleanup and renewed wake/idle guards to prevent re-locks after slow startup. Retain failure clearing, PIN authentication, deep boot and S31 behavior.
+- Pico四种锁屏样式入锁统一执行一次GC16白底清理，再显示完整锁屏图，避免旧阅读文字透出；正常路径不恢复原三轮预清屏。拼贴圆锁提示保持局部GC16，浅睡解锁仍从真实显示记录一次GC16恢复页面，随后恢复网络并重新开始按键保护和空闲计时。临时白画布分配或刷新失败保留原清屏兜底；图片透明度、密码校验、深睡启动和S31不变。
+  All four Pico lock styles present one white GC16 target before the complete lock image to prevent old-text ghosting, without three normal preclear cycles. Keep local collage feedback, one-pass light-sleep page restoration, deferred networking and renewed input guards. Retain clearing on allocation/scan failure, image alpha, PIN authentication, deep boot and S31 behavior.
 
 - Pico透明书封在内存充足时复用校验中解压的书封层，省去第二遍读卡和解压；完整校验后才修改当前底图，低内存沿用原路径，版本不变。
   Pico transparent covers reuse decoded pixels from complete cache validation when memory permits, avoiding a second read/decode before composition. Retain the low-memory path and existing versions.

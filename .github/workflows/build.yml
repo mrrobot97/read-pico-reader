@@ -82,6 +82,7 @@ jobs:
           python3 tools/lock_pin_host_test.py
           python3 tools/lock_screen_host_test.py
           python3 tools/lock_style_host_test.py
+          python3 tools/pico_lock_clean_frame_host_test.py
           python3 tools/font_picker_catalog_host_test.py
           python3 tools/font_catalog_host_test.py
           python3 tools/power_double_click_host_test.py
