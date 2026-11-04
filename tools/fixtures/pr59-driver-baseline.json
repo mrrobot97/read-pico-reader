@@ -220,14 +220,14 @@
   },
   "approved_overrides": {
     "boards/pico/src/main/sleep.c": {
-      "sha256": "abcc84b3e2afaeaa130b4985c26459d2f4a03857cf95dd1b5869d4d318710c22",
-      "user_decision": "用户2026-11-04要求优化Pico透明书封锁屏并去掉新增耗时统计：保留已合入PR71唤醒、PIN和睡眠保护；正常透明书封从真实旧帧单次GC16输出，绘图/输出失败与其他样式保留原清屏。 / User2026-11-04 authorizes Pico transparent-cover lock optimization without added timing instrumentation: retain PR71 wake/PIN/sleep guards; one GC16 from true history for successful art, original clear on art/output failure or other styles."
+      "sha256": "8b6172fff37cae7d4eb54efd6b599587a148e7d44414311c011afddc68282a02",
+      "user_decision": "用户2026-11-04要求Pico四种锁屏样式一起优化且保留保护：正常锁屏/浅睡解锁单次GC16、页面恢复后重启网络，拼贴提示只局部GC16；反馈/绘图/输出失败保留原清屏，缓存/PIN/深睡策略及波形不变。 / User2026-11-04 extends the Pico optimization to all four lock styles: one GC16 lock/light-wake restore, deferred network restart and local GC16 collage feedback; retain clearing on feedback/art/output failure and preserve cache/PIN/deep-sleep/waveform behavior."
     },
     "main/sleep.h": {
-      "sha256": "2d071d9bf4b9d494437afd76a53fee523f0ed65bd1fba71c369260fb65eedadd",
+      "sha256": "0c067e19583e5ee75fd726f0bf773482b280346b795f88fd80ec2f175b99f4c5",
       "pull_request": 71,
       "source_commit": "24e70e0057c44da826270822f4c831f5911de0e5",
-      "reason": "User2026-11-02 authorized merging PR71; this header gained the resume-wake flag used by the merged deep-sleep wake fix."
+      "reason": "Retain the merged PR71 API; User2026-11-04 all-style Pico lock optimization updates only the local-GC16 collage-feedback contract comment. No declarations or S31 behavior changed."
     },
     "boards/metalio47/src/main/sleep.c": {
       "sha256": "ebd69695ba51323520a2434c8ea9f84e7d0b5cf7f55bc2bb629485f664ecbfe4",
