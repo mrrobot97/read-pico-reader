@@ -244,10 +244,8 @@
       "reason": "User2026-11-03 authorized the CX25601N charger optimization; charger_init now delegates to metalio_charger while battery status decoding stays unchanged."
     },
     "boards/pico/src/main/display_reader_waveform.c": {
-      "sha256": "231de8d85f6b6d9d7575ec37f18021c1b9d058ecd584ddbb18cdbf5fb2f10d19",
-      "pull_request": 68,
-      "source_commit": "cd9f1a598a97a985bcda57dc47d49e118c4b1083",
-      "reason": "User2026-11-02 explicitly approved merging PR68 as authored; retain its Pico ripple erase/redrive phases and64-phase engine capacity."
+      "sha256": "51faf159ead62f5f8115fab11c3c65553d304a7d2a71f9a14f8f749064e91553",
+      "user_decision": "用户2026-11-04明确要求仅revert普通翻页波形增强并编译对照：普通派生段逐字节恢复官方rc103(14cff66)，保留此前批准的PR68水波纹53相、速读、原表/供电和其他功能。 / User2026-11-04 explicitly requests reverting only ordinary-turn enhancement for testing: restore its block exactly from official rc103 (14cff66), retaining approved PR68 ripple53, Fast BW, raw tables/power and other features."
     },
     "boards/metalio47/src/main/display_reader_waveform.c": {
       "sha256": "36206a088c9071d40c7c61d9bda9df81be5df7c8c2c44d8f7b7466dc200e6f61",

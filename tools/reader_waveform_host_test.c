@@ -126,16 +126,14 @@ int main(void) {
     }
     assert(held==16&&edge_runs>=10);
     puts("PASS: reader ripple holds all 16 unchanged grays and reduces at least ten gray-edge dark runs; existing text profile, targets and 37 phases unchanged");
-    // 普通翻页柔和档：厂商 GL16 原序，等灰全保持；末尾定稿保持之前补十二相整屏擦白，
-    // 再补四相重推黑，抵消整屏白推对黑字的冲淡。
-    // Soft ordinary turn: vendor GL16 phases, every equal pair held, twelve whole-panel white
-    // phases plus four black re-drive phases inserted before the vendor's trailing settle holds.
+    // 普通翻页rc103对照：保留原厂相序/等灰重驱、等黑去擦白，仅插入4相白目标与原3相保持。
+    // rc103 ordinary profile: original/equal-gray transitions, black-on-black erase omitted, four white-target phases then original holds.
     const EpdWaveform* soft_turn = display_reader_soft_turn_waveform();
     assert(soft_turn == display_reader_soft_turn_waveform() && soft_turn != &E0470_WAVEFORM);
     const EpdWaveformPhases* st = e0470_waveform_phases(soft_turn, MODE_GL16);
     const EpdWaveformPhases* vendor = e0470_waveform_phases(&E0470_WAVEFORM, MODE_GL16);
     assert(vendor && st && !st->phase_times && !vendor->phase_times);
-    assert(st->phases == vendor->phases + 16);
+    assert(st->phases == vendor->phases + 4 && st->phases == 41);
     const int drive = vendor->phases - 3;
     unsigned equal_gray_refreshes = 0;
     for (int from = 0; from < 16; ++from)
@@ -151,24 +149,19 @@ int main(void) {
                 if (to == from && a != 0) ++equal_gray_refreshes;
             }
     assert(equal_gray_refreshes > 0);
-    for (int f = drive; f < drive + 12; ++f)
+    for (int f = drive; f < drive + 4; ++f)
         for (int from = 0; from < 16; ++from)
             for (int to = 0; to < 16; ++to)
                 assert(e0470_phase_action(st, f, to, from) ==
                        (to == 15 ? 2 : 0));
-    for (int f = drive + 12; f < drive + 16; ++f)
-        for (int from = 0; from < 16; ++from)
-            for (int to = 0; to < 16; ++to)
-                assert(e0470_phase_action(st, f, to, from) ==
-                       (to == 0 ? 1 : 0));
     for (int i = 0; i < 3; ++i)
         for (int from = 0; from < 16; ++from)
             for (int to = 0; to < 16; ++to) {
-                assert(e0470_phase_action(st, drive + 16 + i, to, from) ==
+                assert(e0470_phase_action(st, drive + 4 + i, to, from) ==
                        e0470_phase_action(vendor, drive + i, to, from));
-                assert(e0470_phase_action(st, drive + 16 + i, to, from) == 0);
+                assert(e0470_phase_action(st, drive + 4 + i, to, from) == 0);
             }
-    puts("PASS: soft ordinary turn keeps vendor sequences and equal-gray refresh, drops only black-on-black erase phases, inserts twelve whole-white phases and four black re-drive phases before the vendor settle holds");
+    puts("PASS: soft ordinary turn keeps vendor sequences and equal-gray refresh, drops only black-on-black erase phases, restores rc103 ordinary41 with four whole-white phases before the vendor settle holds");
     const EpdWaveform* water_wave=display_reader_water_waveform();
     const EpdWaveformPhases* water=e0470_waveform_phases(water_wave,MODE_GL16);
     assert(water_wave==display_reader_water_waveform() && water && water->phases==E0470_GL16_FRAMES+16);

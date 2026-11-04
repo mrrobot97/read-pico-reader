@@ -2,6 +2,9 @@
 
 ## 本地测试 / Local test — 2026-11-04
 
+- Pico普通/图文翻页派生波形暂回rc103：额外擦白12相恢复4相，移除4相补黑，总计53相恢复41相，用于静置变脏的单变量对照。保留水波纹/速读、页脚局刷、精确裁剪和锁屏修复，版本号不变。
+  Restore the rc103 Pico ordinary/image-turn profile for an idle-darkening comparison: four rather than twelve extra white phases, no four-phase black re-drive,41 rather than53 total phases. Retain ripple/Fast BW, deferred metadata, exact crops, lock fixes and versions.
+
 - Pico四种锁屏样式入锁统一执行一次GC16白底清理，再显示完整锁屏图，避免旧阅读文字透出；正常路径不恢复原三轮预清屏。拼贴圆锁提示保持局部GC16，浅睡解锁仍从真实显示记录一次GC16恢复页面，随后恢复网络并重新开始按键保护和空闲计时。临时白画布分配或刷新失败保留原清屏兜底；图片透明度、密码校验、深睡启动和S31不变。
   All four Pico lock styles present one white GC16 target before the complete lock image to prevent old-text ghosting, without three normal preclear cycles. Keep local collage feedback, one-pass light-sleep page restoration, deferred networking and renewed input guards. Retain clearing on allocation/scan failure, image alpha, PIN authentication, deep boot and S31 behavior.
 
