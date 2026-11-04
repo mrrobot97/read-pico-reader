@@ -220,10 +220,8 @@
   },
   "approved_overrides": {
     "boards/pico/src/main/sleep.c": {
-      "sha256": "35cc7516fe6679abf0db29c411371bbee17a33f78f77f39b8d41d7d68cba52ec",
-      "pull_request": 71,
-      "source_commit": "24e70e0057c44da826270822f4c831f5911de0e5",
-      "reason": "User2026-11-02 authorized merging PR71; record the merged one-press deep-sleep wake content so the PR59 pin stays meaningful."
+      "sha256": "abcc84b3e2afaeaa130b4985c26459d2f4a03857cf95dd1b5869d4d318710c22",
+      "user_decision": "用户2026-11-04要求优化Pico透明书封锁屏并去掉新增耗时统计：保留已合入PR71唤醒、PIN和睡眠保护；正常透明书封从真实旧帧单次GC16输出，绘图/输出失败与其他样式保留原清屏。 / User2026-11-04 authorizes Pico transparent-cover lock optimization without added timing instrumentation: retain PR71 wake/PIN/sleep guards; one GC16 from true history for successful art, original clear on art/output failure or other styles."
     },
     "main/sleep.h": {
       "sha256": "2d071d9bf4b9d494437afd76a53fee523f0ed65bd1fba71c369260fb65eedadd",

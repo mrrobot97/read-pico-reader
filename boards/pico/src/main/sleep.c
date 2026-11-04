@@ -18,6 +18,8 @@
  * User revision: port official a2a63a6 peripheral/IOE parking and CPU light-sleep retention while preserving ten-minute light sleep, PIN and reader checkpoints.
  * 冻结：沿用实际后缓冲，不把圆锁当白色；不增加帧副本，自动休眠/其他样式/失败回退保留原流程。
  * Frozen: Retain true history including the badge, add no frame copy and preserve idle/other-style/failure recovery.
+ * 用户2026-11-04：透明书封正常锁屏直接从真实旧帧做一次GC16，省去三轮预清屏；绘图/输出失败与其他样式保留原清屏。
+ * User2026-11-04: transparent covers use one GC16 from true history; preserve original clearing for art/output failures and other styles.
  */
 #include "ui_avatar.h"
 #include "book_cover_jobs.h"
@@ -634,10 +636,11 @@ void enter_lock_and_sleep(
         ui_lock_fallback_draw(framebuffer);
     }
     enum EpdDrawError result = EPD_DRAW_SUCCESS;
-    if (feedback_visible) result = update_display_full(hl);
-    if (!feedback_visible || result != EPD_DRAW_SUCCESS) {
-        // 反馈成功时不再重复清白；GC16从真实圆锁历史输出。自动/其他样式/失败保留原清屏。
-        // A successful badge needs no second white clear; GC16 uses its true history. Idle/other/fault paths retain original clearing.
+    const bool direct_frame = feedback_visible || (lock_style == 3 && lock_drawn);
+    if (direct_frame) result = update_display_full(hl);
+    if (!direct_frame || result != EPD_DRAW_SUCCESS) {
+        // 透明书封/圆锁从真实后缓冲输出；其他样式或失败仍清白，再按白基准重试最终图。
+        // Covers/badges use true history; other styles or failed output retain the original clear and from-white final frame.
         epd_poweron();
         epd_clear();
         result = epd_hl_update_screen_from_white(hl, MODE_GC16, 25);
