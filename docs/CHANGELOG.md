@@ -1,5 +1,14 @@
 # 版本变更 / Changelog
 
+## Pico 0.3.3-rc105 / Metalio S31 0.3.3-rc110 — 2026-11-04
+
+- 两板内建覆盖7668字符，正文缺字回退、16级灰阶补字、缩放边缘及逐字墨量校正；保留系统字形与导入字体。支持默认全屏、紧凑阅读线按钮和稳定的上下操作栏/分页，修复书架分页箭头。
+  Both boards cover7668 characters with missing-glyph fallback,16-level supplements, scaled-edge and per-glyph ink calibration, retaining UI and imported faces. Include Default fullscreen, compact guide controls, stable reader chrome/pagination and shelf paging fixes.
+- 保留已合并的Pico阅读裁剪及Moku双板刷新方案。S31同步行首/启动对齐、完整物理唤醒目标清理、USB排空后卸载、后台换字体及有界渐进JPEG；保留TF降频兼容/自动恢复、唤醒字体恢复、路由器传书优化和保持浅睡。
+  Preserve merged Pico crop fixes and Moku refresh policies. S31 adds row/start alignment, physical wake-target clearing, drained USB teardown, detached font replacement and bounded progressive JPEG, retaining SD fallback/recovery, wake-font recovery, router transfer work and Keep-light sleep.
+- 官网USB、TF及联网OTA同步发布；保留原Pico rc104/S31 rc109刷机与下载入口、所有历史字节及现有分区。默认保留设置与进度；S31刷机不再检查旧固件品牌。
+  Publish matching web/TF/OTA builds, retaining original rc104/rc109 install/download entries, historic bytes and partitions. Preserve settings/progress by default; S31 no longer checks current-firmware branding.
+
 ## 本地测试 / Local test — 2026-11-04
 
 - Pico普通/图文翻页派生波形暂回rc103：额外擦白12相恢复4相，移除4相补黑，总计53相恢复41相，用于静置变脏的单变量对照。保留水波纹/速读、页脚局刷、精确裁剪和锁屏修复，版本号不变。
@@ -11,10 +20,40 @@
 - Pico透明书封在内存充足时复用校验中解压的书封层，省去第二遍读卡和解压；完整校验后才修改当前底图，低内存沿用原路径，版本不变。
   Pico transparent covers reuse decoded pixels from complete cache validation when memory permits, avoiding a second read/decode before composition. Retain the low-memory path and existing versions.
 
+- S31内建补字对齐Pico：同样7668字覆盖、16级灰阶、源字宽、缩放边缘与逐字墨量校正，保留全部界面字形、原生/外置字体和既有刷新方案。移除仅用于旧尺寸检查的未使用锁屏位图，沿用原分区及锁屏样式，仅本地测试。
+  Align S31 supplements with Pico's7668-character coverage,16-level gray, source advances, scaled edges and per-glyph ink calibration. Retain UI glyphs,native/imported faces and refresh policies; remove unused lock art formerly linked for a size check, preserving partitions and lock styles. Local test only.
+
+- S31采用行首像素与启动时序对齐，唤醒重绘覆盖完整物理边缘；USB退出确认回调排空后再卸载，失败保留资源供重试。阅读字体后台准备、提交失败保留旧字库；渐进JPEG有界分带，必要时使用自有TF临时文件并协作取消。保留既有阅读波形、TF兼容恢复及Pico，仅本地测试。
+  S31 aligns row pixels/start timing and clears the full physical wake target. Drain USB callbacks before teardown, retaining resources on failure. Prepare reader fonts off-thread with old-face rollback; progressive JPEG uses bounded bands, owned SD backing when needed and cooperative cancellation. Preserve reader waveforms, SD compatibility/recovery and Pico; local test only.
+
+- S31网页刷机取消旧应用品牌检查，可直接从当前固件更新；保留目标固件校验、机型/分区/启动槽检查和默认数据保护。
+  S31 web installation accepts the current firmware without a brand check, retaining target integrity,chip/layout/boot-slot checks and data-preservation defaults.
+
+- S31阅读波形定稿：整页刷新保持厂家完整48相；普通翻页12相擦白+4相重推黑并走单带快速引擎；48相模式关闭本地额外白/黑补帧。纯文字页对“白→中灰”改用白侧直接压黑（标定系数0.40，1~6相），灰边与黑白端点同段出现；图文/插图页按Pico整页全像素走原厂柔和翻页表，避免直推压坏插图灰阶。
+  S31 reader waveforms finalized: page refreshes keep the vendor full 48 phases; ordinary turns use twelve erase plus four black re-drive phases on the fast single-band engine, and the full-48 profile drops the local extra white/black pulses. Text-only pages push white-origin midgrays directly from white (calibrated 0.40, 1..6 phases) so gray edges settle with the endpoints; image pages follow Pico's whole-page full-pixel soft turn with the vendor table, keeping illustration tone.
+
 - Pico局部刷新精确屏蔽裁剪范围外的像素，避免沉浸阅读普通翻页把底部未读进度线带入灰阶重驱而闪黑；后缓冲只提交实际刷新范围，保留原波形与页脚延迟更新，版本号不变。
   Mask Pico partial updates to exact pixel bounds so immersive body turns do not re-drive the unread gray progress track. Commit only the scanned bounds, retaining waveforms, deferred footer updates and existing versions.
 
+- Pico正文放大的内建补字按每字原始墨量校正灰边，改善密集笔画粘连和个别字符偏粗；保留字库覆盖、原生字形、字宽、抗锯齿及字重微调。大字号细节仍受24px补字素材限制。
+  Calibrate enlarged Pico reader supplements to each glyph's source ink, improving dense-stroke merging and uneven weight. Preserve coverage,native glyphs,advances,AA and stroke controls. Fine detail at large sizes remains limited by24px source bitmaps.
+
+- Pico与S31新增771个字符：396个汉字（包括通用规范前6500字中的缺口、姓名字与部分常见繁体）及375个标点/符号/常用字母，涵盖书名号、单双引号、圈号数字、罗马数字、拼音和Latin-1。保留原有GB2312与16级灰阶，原有轮廓和界面像素不变；精简未使用的字体布局数据以适应现有分区，S31沿用紧凑单色补字以适应现有分区；极生僻字仍需TF字体。
+  Pico and S31 add771 characters:396 Han covering common6500 gaps, selected names/traditional forms, and375 book punctuation/symbols/letters including quotes, circled/Roman numbers, pinyin andLatin-1. Preserve GB2312,16-level AA and original pixels/metrics; remove unused font layout data to fit existing partitions. S31 retains compact monochrome supplements within its existing partition; rarer glyphs still need a card font.
+
 ## 本地测试 / Local test — 2026-11-03
+
+- Pico保留内建原生轮廓，缺字改用16级灰阶补字，改善混排黑度不一；开关抗锯齿分别输出灰阶与黑白，放大收窄灰边。补字使用源字体精确字宽，保留字号、笔画微调、横竖排及外置字体选择；UI字库与S31保持。
+  Pico keeps native outlines and uses16-level missing-glyph coverage to improve mixed text weight. AA switches between gray and binary ink; enlarged edges stay narrow. Use exact source advances with existing size, stroke, vertical/horizontal and face controls, preserving UI fonts and S31 behavior.
+
+- 正文缺字复用已有内建轮廓与压缩补字库，合计覆盖6763个GB2312汉字；当前字体已有字形优先，不改字体选择。补字按字号缩放并参与字重微调、横竖排和预读，字宽测量与实际绘制一致；大字形的清晰度受现有24px位图素材限制，超出已有字库的字符仍需外置字体。
+  Missing body glyphs reuse built-in outlines and the shipped compressed supplement, covering6763 GB2312 Han characters while preserving native-glyph priority and selected faces. Fallback scales with size, follows stroke adjustment, horizontal/vertical layout and prefetch, with matching measured/raster advances. Large glyph sharpness is limited by the existing24px bitmap source; characters outside the embedded coverage still require an external face.
+
+- 阅读线范围按钮缩小并与样式卡片对齐；阅读设置新增“默认全屏”，仅影响新开书，睡眠恢复保留锁屏前状态。默认关闭，与“全屏沉浸”独立，支持重启及设置备份恢复。
+  Align compact guide-range buttons with style cards. Default fullscreen changes fresh book entry only, while sleep resumes keep their recorded mode. Default off, independent of immersion, persistent across restarts and configuration restore.
+
+- S31进入阅读时先物理清白，再从白底完整绘制阅读页，增强封面和图片页对书架残影的清理；沿用现有图片清屏接口与原厂波形，后续翻页路径保持。
+  Clear the S31 panel before rendering the reader entry frame from white, improving shelf ghost cleanup on cover/image pages. Reuse the existing image-clean path and vendor waveforms; retain subsequent turn routing.
 
 - 书架四个分页箭头独立处理按下/抬手，容许边缘轻微漂移；实际翻页清除旧按压刷新标记，保留取消、扫描门禁和首末页边界。
   Shelf pager contacts own press/release with slight edge-drift tolerance; real turns clear stale press refresh state while retaining cancellation, scan guards and page bounds.
