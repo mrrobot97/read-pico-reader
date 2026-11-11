@@ -35,7 +35,7 @@ main=s[s.index('    if (y<160 || y>=UI_NAV_TOP || ev->x0<36',start):s.index('\ns
 assert main.endswith('}')
 main=main[:-1]
 enum=s[s.index('typedef enum { SETTINGS_MAIN'):s.index('} settings_page_t;')+len('} settings_page_t;')]
-macros='\n'.join(re.findall(r'^#define SETTINGS_(?:ROW_H|WIRELESS_ROWS|DISPLAY_ROWS|PERSONAL_ROWS|MAINTENANCE_ROWS|WIRELESS_Y|DISPLAY_Y|PERSONAL_Y|MAINTENANCE_Y)[^\n]*',s,re.M))
+macros='\n'.join(re.findall(r'^#define SETTINGS_(?:ROW_H|WIRELESS_ROWS|DISPLAY_ROWS|PERSONAL_ROWS|MAINTENANCE_ROWS|WIRELESS_Y|GAME_Y|DISPLAY_Y|PERSONAL_Y|MAINTENANCE_Y)[^\n]*',s,re.M))
 layout=s[s.index('typedef struct {\n    EpdRect size, preview;'):s.index('static system_font_layout_t system_font_layout(')]
 unit=r'''
 #include <assert.h>
@@ -50,6 +50,7 @@ enum{UI_GESTURE_TAP,UI_GESTURE_SWIPE_U};
 typedef struct{int unused;}app_desc_t;
 typedef struct{const app_desc_t*request_app;}app_ctx_t;
 const app_desc_t app_transfer={0};
+const app_desc_t app_sudoku={0};
 typedef struct{int unused;}ble_pt_raw_t;
 typedef struct{const char *path;}ttf_font_item_t;
 static const ttf_font_item_t fonts[]={{"/sdcard/fonts/A.ttf"},{"/sdcard/fonts/B.ttf"},{"/sdcard/fonts/C.ttf"}};
@@ -103,7 +104,12 @@ int main(void){
    assert(l.font_title<l.first&&l.first+l.slots*l.row_height<settings_viewport_end());
    for(int i=0;i<l.slots;++i){EpdRect r=system_font_item_rect(i);assert(r.y+r.height<settings_viewport_end());if(i)assert(system_font_item_rect(i-1).y+system_font_item_rect(i-1).height<r.y);}
    assert(SETTINGS_WIRELESS_Y>=180+settings_profile_height()+70);
-   assert(SETTINGS_DISPLAY_Y>SETTINGS_WIRELESS_Y+3*SETTINGS_ROW_H);
+   assert(SETTINGS_GAME_Y > SETTINGS_WIRELESS_Y + SETTINGS_WIRELESS_ROWS * SETTINGS_ROW_H);
+   assert(SETTINGS_DISPLAY_Y > SETTINGS_GAME_Y + SETTINGS_ROW_H);
+   assert(SETTINGS_GAME_Y >= 160 && SETTINGS_GAME_Y + SETTINGS_ROW_H < UI_NAV_TOP);
+   s_page=SETTINGS_MAIN;s_main_scroll=0;ctx.request_app=NULL;
+   assert(main_tap(&ctx, 300, SETTINGS_GAME_Y + SETTINGS_ROW_H / 2) == APP_REDRAW_NONE);
+   assert(ctx.request_app == &app_sudoku);
    assert(SETTINGS_PERSONAL_Y>SETTINGS_DISPLAY_Y+6*SETTINGS_ROW_H);
    const int tops[]={SETTINGS_WIRELESS_Y,SETTINGS_DISPLAY_Y,SETTINGS_PERSONAL_Y,SETTINGS_MAINTENANCE_Y};
    const int counts[]={3,7,4,5};

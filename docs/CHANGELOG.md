@@ -1,5 +1,14 @@
 # 版本变更 / Changelog
 
+## 本地测试 / Local test — 2026-11-11
+
+- Pico 和 S31 在「设置 → 游戏」新增数独。新局支持离线随机生成三档唯一解题目，内置 36 道备用题。支持候选数、撤销、检查和自动保存当前棋局。
+  Add Sudoku under Settings → Games on Pico and S31. Generate puzzles with unique solutions offline across three difficulty levels, with 36 built-in fallback puzzles, notes, undo, checking and automatic game saves.
+- 数独每次点「检查」都会显示当前结果。填数、清除或撤销后清除旧检查标记。
+  Each tap on Check shows the current Sudoku result. Entering, erasing or undoing a move clears the previous marks.
+- 数独标题和返回按钮移到系统状态栏下方。
+  Place the Sudoku title and back button below the system status bar.
+
 ## Pico 0.3.3-rc105 / Metalio S31 0.3.3-rc110 — 2026-11-04
 
 - 两板内建覆盖7668字符，正文缺字回退、16级灰阶补字、缩放边缘及逐字墨量校正；保留系统字形与导入字体。支持默认全屏、紧凑阅读线按钮和稳定的上下操作栏/分页，修复书架分页箭头。

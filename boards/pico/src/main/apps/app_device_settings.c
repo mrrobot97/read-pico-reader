@@ -339,7 +339,8 @@ static int settings_main_row_height(void) {
 #define SETTINGS_PERSONAL_ROWS 4
 #define SETTINGS_MAINTENANCE_ROWS 5
 #define SETTINGS_WIRELESS_Y (180 + settings_profile_height() + 77)
-#define SETTINGS_DISPLAY_Y (SETTINGS_WIRELESS_Y + SETTINGS_WIRELESS_ROWS * SETTINGS_ROW_H + 78)
+#define SETTINGS_GAME_Y (SETTINGS_WIRELESS_Y + SETTINGS_WIRELESS_ROWS * SETTINGS_ROW_H + 78)
+#define SETTINGS_DISPLAY_Y (SETTINGS_GAME_Y + SETTINGS_ROW_H + 78)
 #define SETTINGS_PERSONAL_Y (SETTINGS_DISPLAY_Y + SETTINGS_DISPLAY_ROWS * SETTINGS_ROW_H + 78)
 #define SETTINGS_MAINTENANCE_Y (SETTINGS_PERSONAL_Y + SETTINGS_PERSONAL_ROWS * SETTINGS_ROW_H + 78)
 // 设置行图标：32 像素盒，在行高 68 里垂直居中；墨色统一，避免一行一个灰度。
@@ -776,6 +777,7 @@ static void setting_icon(uint8_t *fb, int index, int cx, int cy) {
         UI_ICON_LOCK,              // 16 锁屏密码 / lock screen password
         UI_ICON_ROTATE_CW,         // 17 屏幕修复 / panel repair
         UI_ICON_LOCK,              // 18 双击解锁 / double-press unlock
+        UI_ICON_LAYOUT_GRID,       // 19 数独 / Sudoku
     };
     if (index < 0 || index >= (int)(sizeof(icons) / sizeof(icons[0]))) return;
     ui_draw_icon(fb, cx, cy, SETTINGS_ICON_PX, icons[index], SETTINGS_ICON_INK);
@@ -1461,6 +1463,11 @@ static void render_content(app_ctx_t *ctx, uint8_t *fb) {
     const int connection_icons[]={0,1,6};
     setting_group(fb,SETTINGS_WIRELESS_Y-49,"连接与时间",SETTINGS_WIRELESS_Y,
                   connection_icons,connection_labels,connection_values,SETTINGS_WIRELESS_ROWS);
+    const int game_icons[] = {19};
+    const char *game_labels[] = {"数独"};
+    const char *game_values[] = {""};
+    setting_group(fb, SETTINGS_GAME_Y - 49, "游戏", SETTINGS_GAME_Y,
+                  game_icons, game_labels, game_values, 1);
     char font_name[96],contrast[24],idle[24],signature[96];
     snprintf(font_name,sizeof(font_name),"%s · %u%%",system_font_label(app_settings_system_font_path()),app_settings_system_font_size());
     snprintf(contrast,sizeof(contrast),"%u%%",app_settings_system_contrast());
@@ -2352,6 +2359,11 @@ static app_redraw_t on_gesture(app_ctx_t *ctx, const ui_gesture_event_t *ev) {
             ble_pt_raw_t unused;while(ble_pt_pop_raw(&unused)){}return APP_REDRAW_PAGE;
         }
         s_page=SETTINGS_TIME;return APP_REDRAW_PAGE;
+    }
+    if (y >= SETTINGS_GAME_Y && y < SETTINGS_GAME_Y + SETTINGS_ROW_H) {
+        extern const app_desc_t app_sudoku;
+        ctx->request_app = &app_sudoku;
+        return APP_REDRAW_NONE;
     }
     if(y>=SETTINGS_DISPLAY_Y && y<SETTINGS_DISPLAY_Y+SETTINGS_DISPLAY_ROWS*SETTINGS_ROW_H) {
         row=(y-SETTINGS_DISPLAY_Y)/SETTINGS_ROW_H;
